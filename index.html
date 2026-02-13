@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guest Wi-Fi – Test Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f8f9fa; margin: 0; }
+    .container { max-width: 500px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
+    h2 { color: #333; }
+    p { color: #555; line-height: 1.5; }
+    button {
+      background: #007bff; color: white; padding: 14px 40px; font-size: 18px;
+      border: none; border-radius: 8px; cursor: pointer; margin-top: 20px;
+    }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome to Test Wi-Fi</h2>
+    <p>This is a demo external captive portal for testing your controller (UniFi, Aruba, pfSense, Meraki, etc.).</p>
+    
+    <button onclick="grantAccess()">Accept Terms & Connect</button>
+    
+    <p style="margin-top:40px; font-size:0.85em; color:#777;">
+      Demo only — no real authentication.<br>
+      Works with base_grant_url parameter from most controllers.
+    </p>
+  </div>
+
+  <script>
+    function grantAccess() {
+      const params = new URLSearchParams(window.location.search);
+      const grantUrl = params.get('base_grant_url') || params.get('redirect');
+      if (grantUrl) {
+        window.location.href = grantUrl;
+      } else {
+        alert("✅ Test successful!\n\nNo grant URL found (simulation mode).");
+      }
+    }
+  </script>
+</body>
+</html>
