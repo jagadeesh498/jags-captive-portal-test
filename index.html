@@ -3,69 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connecting to Wi-Fi...</title>   <!-- ← Changed title to reduce "Sign in" feel -->
+  <title>Welcome to Test Wi-Fi</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 60px 20px; background: #f8f9fa; margin: 0; color: #333; }
-    .container { max-width: 400px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-    h2 { margin-bottom: 10px; }
-    #status { font-size: 1.1em; margin: 20px 0; color: #007bff; }
-    #debug { margin-top: 30px; font-size: 0.85em; color: #666; text-align: left; background: #f0f0f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px 20px; background: #f8f9fa; margin: 0; color: #333; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); }
+    h2 { color: #007bff; }
+    p { line-height: 1.6; font-size: 1.1em; }
+    .terms { background: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: left; font-size: 0.95em; max-height: 200px; overflow-y: auto; }
+    button { background: #007bff; color: white; padding: 14px 40px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+    button:hover { background: #0056b3; }
+    #debug { margin-top: 30px; font-size: 0.85em; color: #666; text-align: left; background: #f8f8f8; padding: 15px; border-radius: 6px; white-space: pre-wrap; }
   </style>
 </head>
-<body onload="autoGrant()">   <!-- Auto-trigger on load for faster flow -->
-
+<body>
   <div class="container">
-    <h2>Connecting to Test Wi-Fi</h2>
-    <p id="status">Accepting terms... Please wait...</p>
+    <h2>Welcome to Test Wi-Fi</h2>
+    <p>Please review the terms and conditions below, then click Accept to connect.</p>
     
-    <div id="debug">Loading Cambium params...</div>
+    <div class="terms">
+      <strong>Terms & Conditions (Demo)</strong><br><br>
+      By clicking Accept, you agree to:<br>
+      - Use this network responsibly and legally.<br>
+      - Not engage in illegal activities, spam, or bandwidth abuse.<br>
+      - Accept that this is a free guest network with no guarantees on speed or availability.<br>
+      - Your device MAC may be logged for security.<br><br>
+      This is a test portal only—no real data collection.
+    </div>
+    
+    <button onclick="grantAccess()">Accept & Connect</button>
+    
+    <div id="debug">Received Cambium Params:<br>(Loading...)</div>
   </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const debugDiv = document.getElementById('debug');
-    debugDiv.innerHTML = 'Received Params:\n' + JSON.stringify(Object.fromEntries(params), null, 2);
+    debugDiv.innerHTML = 'Received Cambium Params:\n' + JSON.stringify(Object.fromEntries(params), null, 2);
 
-    function autoGrant() {
-      const apIp   = params.get('ga_srvr');
-      const gaQv   = params.get('ga_Qv');
+    function grantAccess() {
+      const apIp = params.get('ga_srvr');
+      const gaQv = params.get('ga_Qv');
       const origUrl = params.get('ga_orig_url') || 'http://neverssl.com';
 
       if (!apIp || !gaQv) {
-        document.getElementById('status').innerHTML = 'Error: Missing required params. Manual click needed.';
+        alert("Error: Missing required params (ga_srvr or ga_Qv).\nCheck debug info below.\nCurrent URL: " + window.location.href);
         return;
       }
 
+      // Build POST URL with ALL original query params appended (Cambium best practice)
+      let postUrl = `http://${apIp}:880/cgi-bin/hotspot_login.cgi?${window.location.search.slice(1)}`;
+
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = `http://${apIp}:880/cgi-bin/hotspot_login.cgi`;
+      form.action = postUrl;
 
-      // Add ALL query params as hidden fields (some users report better success)
-      params.forEach((value, key) => {
-        if (key !== 'ga_srvr') {  // exclude ga_srvr from body, it's in URL
-          addHiddenField(form, key, value);
-        }
-      });
+      // For click-through: POST ga_Qv in body (some examples require it here too, but URL is key)
+      const qvInput = document.createElement('input');
+      qvInput.type = 'hidden';
+      qvInput.name = 'ga_Qv';
+      qvInput.value = gaQv;
+      form.appendChild(qvInput);
 
-      // Critical: ga_Qv must be in body for click-through
-      addHiddenField(form, 'ga_Qv', gaQv);
+      // Optional: add any other needed fields if testing RADIUS later (e.g. ga_user, ga_pass)
 
       document.body.appendChild(form);
       form.submit();
 
-      // Fallback if POST doesn't redirect fast enough
+      // Fallback message/redirect (in case AP doesn't auto-redirect)
       setTimeout(() => {
-        document.getElementById('status').innerHTML = 'Authorized! Redirecting...';
+        alert("Authorization sent! You should have internet now.\nIf not, try refreshing or visiting: " + origUrl);
         window.location.href = origUrl;
       }, 3000);
-    }
-
-    function addHiddenField(form, name, value) {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value || '';
-      form.appendChild(input);
     }
   </script>
 </body>
